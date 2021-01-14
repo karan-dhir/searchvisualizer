@@ -91,23 +91,28 @@ def convert_position(mouse_position, rows, cols, width, height):
     return GRID[mouse_position[0]//(width//cols)][mouse_position[1]//(height//rows)]
 
 
-def heuristic(start, end):
+def manhattan(start, end):
     # MANHATTAN DISTANCE
     x1, y1, = start.row, start.col
     x2, y2, = end.row, end.col
     return abs(x1 - x2) + abs(y1 - y2)
 
 
+def dijkstra(start, end):
+    astar(start, end, lambda x, y: 0)
 
-def astar(start, end):
+def astar(start, end, heuristic = manhattan):
     distance_counter = 0
     open = PriorityQueue()
     open.put((0, distance_counter, start))
     fringe = {}
+    distance = {}
     edgeTo = {}
     for row in GRID:
         for tile in row:
+            distance[tile] = float("inf")
             fringe[tile] = float("inf")
+    distance[start] = 0
     fringe[start] = heuristic(start, end)
 
     open_set = {start}
@@ -128,9 +133,10 @@ def astar(start, end):
             return True
 
         for neighborTile in currentTile.neighbors:
-            temp = fringe[currentTile] + 1
-            if temp < fringe[neighborTile]:
+            temp = distance[currentTile] + 1
+            if temp < distance[neighborTile]:
                 edgeTo[neighborTile] = currentTile
+                distance[neighborTile] = temp
                 fringe[neighborTile] = temp + heuristic(neighborTile, end)
                 if neighborTile not in open_set:
                     distance_counter += 1
@@ -148,46 +154,60 @@ def astar(start, end):
     return False
 
 
+def menu():
+    GRID[:] = []
+    # pygame.init()
+    __main__()
 
-# def astar(start, end):
-#     open = []
-#     visited = []
+def HUD():
+    X = 800
+    Y = 800
+    display_surface = pygame.display.set_mode((X, Y))
+    pygame.display.set_caption('RULES')
+    font = pygame.font.Font('freesansbold.ttf', 20)
 
-#     open.append(start)
+    l1 = font.render("LEFT CLICK to set the start point, and then to set the walls.", True, BLACK, WHITE)
+    l2 = font.render("RIGHT CLICK to set the end point.", True, BLACK, WHITE)
+    l3 = font.render("PRESS A to run A* search, PRESS D to run DIJKSTRAS", True, BLACK, WHITE)
+    l4 = font.render("PRESS SPACE to Reset, PRESS R to pull up the Rules", True, BLACK, WHITE)
+    l5 = font.render("PRESS ESC to exit Rules", True, BLACK, WHITE)
+  
+    r1 = l1.get_rect()
+    r2 = l2.get_rect()
+    r3 = l3.get_rect()
+    r4 = l4.get_rect()
+    r5 = l5.get_rect()
 
-#     while open:
-#         open.sort()
-#         current = open.pop(0)
-#         current.setTileColor(PURPLE)
-#         visited.append(current)
-#         if current is end:
-#             current = current.parent
-#             while current != start and current != None:
-#                 current.setTileColor(BLUE)
-#                 current = current.parent
-#             return True
-#         for elem in current.neighbors:
-#             print(elem)
-#         for tiles in current.neighbors:
-#             if tiles not in visited:
-#                 tiles.parent = current
-#                 tempDistFromStart = heuristic(tiles,start)
-#                 tempDistToGoal = heuristic(tiles, end)
-#                 tempTotalCost = tempDistFromStart + tempDistToGoal
-#                 if tiles in open:
-#                     if tiles.totalCost > tempTotalCost:
-#                         tiles.distFromStart = tempDistFromStart
-#                         tiles.distToGoal = tempDistToGoal
-#                         tiles.totalCost = tempTotalCost
-#                 else:
-#                     open.append(tiles)
-#         current.setTileColor(TURQUOISE)
-#     return False
+    r1.center = (X // 2, 200)
+    r2.center = (X // 2, 300)
+    r3.center = (X // 2, 400)
+    r4.center = (X // 2, 500)
+    r5.center = (X // 2, 600)
 
+    while True:
+        display_surface.fill(WHITE)
+        
+        display_surface.blit(l1, r1)
+        display_surface.blit(l2, r2)
+        display_surface.blit(l3, r3)
+        display_surface.blit(l4, r4)
+        display_surface.blit(l5, r5)
+
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+            if event.type == pygame.QUIT:
+                sys.exit()
 
 def __main__():
-    rows = 30
-    cols = 30
+    SIZE = WIDTH, HEIGHT = 800, 800
+    pygame.display.set_caption('SEARCH VISUALIZER')
+    WINDOW = pygame.display.set_mode(SIZE)
+    pygame.init()
+    rows = 40
+    cols = 40
     start_tile = None
     end_tile = None
 
@@ -211,7 +231,6 @@ def __main__():
                     draw_grid(WINDOW, rows, cols)
             else:
                 start_tile = convert_position(mouse_position, rows, cols, WIDTH, HEIGHT)
-                print(start_tile)
                 start_tile.setTileColor(GREEN)
                 draw_grid(WINDOW, rows, cols)
 
@@ -224,20 +243,28 @@ def __main__():
                     end_tile.setTileColor(WHITE)
                     draw_grid(WINDOW, rows, cols)
                 end_tile = clicked_tile
-                print(end_tile)
                 end_tile.setTileColor(RED)
             draw_grid(WINDOW, rows, cols)
 
         for event in pygame.event.get():
             # START ALGORITHM
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
+                if event.key == pygame.K_a:
                     Tile.initializeNeighbors()
                     astar(start_tile, end_tile)
+                if event.key == pygame.K_d:
+                    Tile.initializeNeighbors()
+                    dijkstra(start_tile, end_tile)
+                if event.key == pygame.K_r:
+                    HUD()
+                    menu()
+                if event.key == pygame.K_SPACE:
+                    menu()
             if event.type == pygame.QUIT:
                 sys.exit()
-
     pygame.quit()
+HUD()
+menu()
 
 
-__main__()
+
