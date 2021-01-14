@@ -104,10 +104,13 @@ def astar(start, end):
     open = PriorityQueue()
     open.put((0, distance_counter, start))
     fringe = {}
+    distance = {}
     edgeTo = {}
     for row in GRID:
         for tile in row:
+            distance[tile] = float("inf")
             fringe[tile] = float("inf")
+    distance[start] = 0
     fringe[start] = heuristic(start, end)
 
     open_set = {start}
@@ -128,9 +131,10 @@ def astar(start, end):
             return True
 
         for neighborTile in currentTile.neighbors:
-            temp = fringe[currentTile] + 1
-            if temp < fringe[neighborTile]:
+            temp = distance[currentTile] + 1
+            if temp < distance[neighborTile]:
                 edgeTo[neighborTile] = currentTile
+                distance[neighborTile] = temp
                 fringe[neighborTile] = temp + heuristic(neighborTile, end)
                 if neighborTile not in open_set:
                     distance_counter += 1
