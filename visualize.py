@@ -265,6 +265,3 @@ def __main__():
     pygame.quit()
 HUD()
 menu()
-
-
-
